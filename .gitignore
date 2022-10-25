@@ -1,0 +1,6 @@
+images/
+.vs/
+bin/
+obj/
+*.txt
+*.csproj.user

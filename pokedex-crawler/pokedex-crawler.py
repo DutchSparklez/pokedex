@@ -28,7 +28,7 @@ class Pokemon:
             "number"        : name_and_number[1],
             "description"   : self.get_data(data, '.version-x')[0],
             "category"      : attributes[3],
-            "image_url"     : "https://assets.pokemon.com/assets/cms2/img/pokedex/full/%s.png" % name_and_number[1],
+            "imageurl"     : "https://assets.pokemon.com/assets/cms2/img/pokedex/full/%s.png" % name_and_number[1],
             "length"        : attributes[0],
             "weight"        : attributes[1],
             "abilities"     : self.get_data(data, '.active .attribute-list span', True),
