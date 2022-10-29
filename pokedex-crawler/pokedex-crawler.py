@@ -6,15 +6,15 @@ import json                         # Saving data as JSON
 # The Pokemon Class: the data for a single pokemon
 class Pokemon:
     # Get specific data from the provided HTML DOM.
-    def get_data(self, html, css_class, isDataCollection=False):
+    def get_data(self, html, selector, isDataCollection=False):
         # Check whether we're dealing with a collection of data
         if (isDataCollection): 
             # Return the collection requested
-            return list(map(lambda item: item.text, html.select(css_class)))
+            return list(map(lambda item: item.text, html.select(selector)))
 
         # Return the element requested
         # We split the string in case there is a # in there, since this is the Pokedex number
-        return html.select(css_class)[0].text.replace("\n", "").lstrip().rstrip().split('#')
+        return html.select(selector)[0].text.replace("\n", "").lstrip().rstrip().split('#')
 
     # Create an instance of the Pokemon class
     def __init__(self, data):
