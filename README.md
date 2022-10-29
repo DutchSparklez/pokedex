@@ -12,7 +12,7 @@ A detailed step by step tutorial (will be (partially)) available in text form (.
 
 *Made in Python with BeautifulSoup using Visual Studio Code.*
 
-The first component of the project to be implemented was the webcrawler. This component yields the fastest output and therefore the right palce to start. The goal is simple: get the data on all pokemon from the first generation in a json file. The data is the Pokédex from https://pokemon.com/pokedex/.
+The first component of the project to be implemented was the webcrawler. This component yields the fastest output and therefore the right palce to start. The goal is simple: get the data on all pokemon from the first generation in a json file. The data is the Pokédex from <https://pokemon.com/pokedex/>.
 
 The core of the crawler is the `get-data()` method within the `Pokemon` class. This function, as shown below, extracts data from the downloaded HTML file.  A single result needs cleaning, multiple results do not. So the first step is to checks whether we're expecting a collection of results. Using the DOM selector provided in the selector parameter, I get what I want out of the html.
 
