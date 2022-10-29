@@ -1,6 +1,8 @@
 ﻿using Android.Content;
-using Java.IO;
+using Android.Graphics;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 
@@ -64,6 +66,13 @@ namespace pokedex.Models
 
             // End the sentence and return the result
             return output + " type";
+        }
+
+        public Bitmap GetImage()
+        {
+            using var webClient = new WebClient();
+            byte[] imageStream = webClient.DownloadData(ImageUrl);
+            return BitmapFactory.DecodeByteArray(imageStream, 0, imageStream.Length);
         }
     }
 }

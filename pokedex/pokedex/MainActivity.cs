@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using AndroidX.Core.View;
 using System;
 using Android.Widget;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace pokedex
 {
@@ -25,6 +26,9 @@ namespace pokedex
         private List<Pokemon> pokemonData = new List<Pokemon>();
         private GestureDetectorCompat gestureDetector;
 
+        private TextView pokemonNumber;
+        private ImageView pokemonImage;
+
         /// <summary>
         /// This function creates the main activity and places it on the screen.
         /// </summary>
@@ -33,9 +37,6 @@ namespace pokedex
         {
             // Make the app full screen
             Window.AddFlags(WindowManagerFlags.Fullscreen);
-
-            // Get the Pokémon data
-            GetPokemonData();
 
             // Create the activity
             base.OnCreate(savedInstanceState);
@@ -46,6 +47,13 @@ namespace pokedex
 
             // Enable Gesture Detection
             gestureDetector = new GestureDetectorCompat(this, new MyGestureListener());
+
+            // Get the interface components
+            pokemonNumber = FindViewById<TextView>(Resource.Id.pokemonNumber);
+            pokemonImage = FindViewById<ImageView>(Resource.Id.pokemonImage);
+
+            // Get the Pokémon data; this has to be last to have everything loaded.
+            GetPokemonData();
         }
 
         /// <summary>
@@ -79,10 +87,17 @@ namespace pokedex
             pokemonData = JsonConvert.DeserializeObject<List<Pokemon>>(json);
 
             // Save the data of a single pokemon
-            Pokemon test = pokemonData[0];
+            LoadPokemonData(pokemonData[new Random().Next(151)]);
+        }
+
+        private void LoadPokemonData(Pokemon pokemon)
+        {
+            // Load the interface elements
+            pokemonNumber.Text = pokemon.Number;
+            pokemonImage.SetImageBitmap(pokemon.GetImage());
 
             // Let the app speak out the details of the pokemon
-            test.SayDetails();
+            pokemon.SayDetails();
         }
 
         // Build in function to manage android permission

@@ -7,11 +7,10 @@
     android:background="@drawable/wallpaper">
 
     <ImageView
-        android:layout_width="300dp"
-        android:layout_height="300dp"
-        android:scaleType="centerInside"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:src="@drawable/bulbasaur"/>
+        android:id="@+id/pokemonImage"/>
 
     <TextView
         android:layout_width="150dp"
