@@ -1,38 +1,41 @@
 ﻿using Android.App;
+using Android.Content.PM;
 using Android.OS;
 using Android.Runtime;
 using Android.Views;
-using AndroidX.AppCompat.App;
-using Android.Content.PM;
-using Newtonsoft.Json;
-using pokedex.Models;
-using System.Collections.Generic;
-using System.IO;
-using static Android.Views.GestureDetector;
-using System.Runtime.InteropServices;
+using Android.Widget;
 using AndroidX.Core.View;
 using System;
-using Android.Widget;
-using static System.Net.Mime.MediaTypeNames;
+using System.Collections.Generic;
+using pokedex.Models;
+using pokedex.Services;
+using Xamarin.Essentials;
+using static Android.Views.GestureDetector;
 
 namespace pokedex
 {
     /// <summary>
-    /// The main activity: the starting point of the application
+    /// The main activity: the starting point of the application.
     /// </summary>
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation, ScreenOrientation = ScreenOrientation.Landscape)]
     public class MainActivity : Activity
     {
-        private List<Pokemon> pokemonData = new List<Pokemon>();
+        // Create a list that will hold the data on all pokemon
+        // We also need a way to detect whether a pokemon is currently loaded, -1 represent no active pokemon
+        private readonly List<Pokemon> pokemonData = new List<Pokemon>();
+        private int activePokemonIndex = -1;
+
+        // The app needs an object that detects gestures
         private GestureDetectorCompat gestureDetector;
 
+        // Create variables that store android views
         private TextView pokemonNumber;
         private ImageView pokemonImage;
 
         /// <summary>
         /// This function creates the main activity and places it on the screen.
         /// </summary>
-        /// <param name="savedInstanceState">If you keep variables in your application, this is how they're loaded in after sleep.</param>
+        /// <param name="savedInstanceState">If you keep variables in your application, this is how they're loaded in after sleep</param>
         protected override void OnCreate(Bundle savedInstanceState)
         {
             // Make the app full screen
@@ -40,58 +43,39 @@ namespace pokedex
 
             // Create the activity
             base.OnCreate(savedInstanceState);
-            Xamarin.Essentials.Platform.Init(this, savedInstanceState);
+            Platform.Init(this, savedInstanceState);
 
             // Display the activity on screen
             SetContentView(Resource.Layout.activity_main);
 
             // Enable Gesture Detection
-            gestureDetector = new GestureDetectorCompat(this, new MyGestureListener());
+            gestureDetector = new GestureDetectorCompat(this, new MyGestureListener { mainActivity = this });
+
+            // Initialize the TTS engine to reduce waiting times
+            TextToSpeech.SpeakAsync("");
 
             // Get the interface components
             pokemonNumber = FindViewById<TextView>(Resource.Id.pokemonNumber);
             pokemonImage = FindViewById<ImageView>(Resource.Id.pokemonImage);
 
-            // Get the Pokémon data; this has to be last to have everything loaded.
-            GetPokemonData();
+            // Load the Pokémon data; this has to be last to have everything loaded
+            PokedexService.LoadPokemonData(Assets.Open("pokemon.json"));
         }
 
         /// <summary>
-        /// This function directs touch events to the MyGestureListener class.
+        /// This function loads a pokemon into the activity. The pokemon is first set as active,
+        /// after which all data will be loaded into their individual views.
+        /// This function also activates the TTS of the pokemon.
         /// </summary>
-        /// <param name="e">A motion event, contains information on the interaction with the screen</param>
-        /// <returns>A boolean that tells whether a touch event has been registered and handled</returns>
-        public override bool OnTouchEvent(MotionEvent e) 
+        /// <param name="pokedexNumber">The pokedex number of the pokemon that's supposed to be loaded in</param>
+        private void LoadPokemonData(int pokedexNumber)
         {
-            // Direct the touch event to MyGestureListeren
-            gestureDetector.OnTouchEvent(e);
-            return base.OnTouchEvent(e);
-        }
+            // Set the active pokemon
+            activePokemonIndex = pokedexNumber - 1;
 
-        /// <summary>
-        /// This function reads all the Pokémon data from the included JSON file.
-        /// It saves all the Pokémon data as Pokémon objects in the pokemonData property.
-        /// </summary>
-        public void GetPokemonData()
-        {
-            // Create a data stream which reads from the included json file
-            Stream dataStream = Assets.Open("pokemon.json");
+            // Get the pokemon
+            Pokemon pokemon = pokemonData[activePokemonIndex];
 
-            // Start reading the file
-            using StreamReader reader = new StreamReader(dataStream);
-
-            // Make a single string out of the entire file
-            string json = reader.ReadToEnd();
-
-            // Convert the data to a list of Pokémon objects
-            pokemonData = JsonConvert.DeserializeObject<List<Pokemon>>(json);
-
-            // Save the data of a single pokemon
-            LoadPokemonData(pokemonData[new Random().Next(151)]);
-        }
-
-        private void LoadPokemonData(Pokemon pokemon)
-        {
             // Load the interface elements
             pokemonNumber.Text = pokemon.Number;
             pokemonImage.SetImageBitmap(pokemon.GetImage());
@@ -100,11 +84,33 @@ namespace pokedex
             pokemon.SayDetails();
         }
 
+        /// <summary>
+        /// This function uses the Pokedex Service to get a random pokemon from the API.
+        /// This random pokemon will be loaded as the active pokemon.
+        /// </summary>
+        public void GetRandomPokemon()
+        {
+            // Get a random pokemon and load it into the app
+            LoadPokemonData(PokedexService.GetRandomPokemon());
+        }
+
+        /// <summary>
+        /// This function directs touch events to the MyGestureListener class.
+        /// </summary>
+        /// <param name="e">A motion event, contains information on the interaction with the screen</param>
+        /// <returns>A boolean that tells whether a touch event has been registered and handled</returns>
+        public override bool OnTouchEvent(MotionEvent e)
+        {
+            // Direct the touch event to MyGestureListeren
+            gestureDetector.OnTouchEvent(e);
+            return base.OnTouchEvent(e);
+        }
+
         // Build in function to manage android permission
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Permission[] grantResults)
         {
             // Set all the required permission
-            Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+            Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
         }
         
@@ -114,7 +120,10 @@ namespace pokedex
         /// </summary>
         internal class MyGestureListener : SimpleOnGestureListener
         {
-            // Create a constant that is used to calculate whether a swipe has been made.
+            // Create a constant that holds the main activity
+            public MainActivity mainActivity;
+
+            // Create a constant that is used to calculate whether a swipe has been made
             private readonly int MinimumVelocity = 200;
 
             /// <summary>
@@ -155,17 +164,17 @@ namespace pokedex
             /// <returns>True if the event was handled, false it wasn't</returns>
             public override bool OnFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
             {
-                // Get the direction of the swipe, this becomes an empty string if the movement is not a valid swipe.
+                // Get the direction of the swipe, this becomes an empty string if the movement is not a valid swipe
                 string direction = GetSwipeDirection(e2.GetX() - e1.GetX(), e2.GetY() - e1.GetY(), velocityX, velocityY);
 
                 // Determine the action based on the direction
                 switch (direction)
                 {
-                    case "Right": Console.WriteLine(direction); return true;
-                    case "Left": Console.WriteLine(direction); return true;
-                    case "Up": Console.WriteLine(direction); return true;
-                    case "Down": Console.WriteLine(direction); return true;
-                    default: return false;
+                    case "Right":   Console.WriteLine(direction);       return true;    // Show camera
+                    case "Left":    Console.WriteLine(direction);       return true;    // Show pokemon list
+                    case "Up":      Console.WriteLine(direction);       return true;    // Show pokemon details
+                    case "Down":    mainActivity.GetRandomPokemon();    return true;    // Get random pokemon
+                    default:                                            return false;
                 }
             }
         }

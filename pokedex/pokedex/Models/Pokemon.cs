@@ -1,9 +1,6 @@
-﻿using Android.Content;
-using Android.Graphics;
-using System.IO;
+﻿using Android.Graphics;
 using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 using Xamarin.Essentials;
 
 namespace pokedex.Models
@@ -68,10 +65,17 @@ namespace pokedex.Models
             return output + " type";
         }
 
+        /// <summary>
+        /// Function that download the image of a pokemon from the internet using the ImageURL.
+        /// </summary>
+        /// <returns>A bitmap image of the pokemon</returns>
         public Bitmap GetImage()
         {
+            // Download the image of the pokemon from the internet
             using var webClient = new WebClient();
             byte[] imageStream = webClient.DownloadData(ImageUrl);
+
+            // Turn the data from the internet request into an actual image usable by android
             return BitmapFactory.DecodeByteArray(imageStream, 0, imageStream.Length);
         }
     }
