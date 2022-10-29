@@ -1,5 +1,6 @@
 images/
 .vs/
+node_modules/
 bin/
 obj/
 *.txt
