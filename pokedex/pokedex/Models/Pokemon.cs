@@ -9,7 +9,7 @@ namespace pokedex.Models
     /// The object template that hold the data of a single pokemon.
     /// This class is used when converting JSON objects to C# objects.
     /// </summary>
-    class Pokemon
+    public class Pokemon
     {
         // The data of the Pokemon
         public string Number;

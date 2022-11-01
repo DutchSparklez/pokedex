@@ -5,12 +5,10 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using AndroidX.Core.View;
-using System;
-using System.Collections.Generic;
 using pokedex.Models;
 using pokedex.Services;
 using Xamarin.Essentials;
-using static Android.Views.GestureDetector;
+using Android.Content;
 
 namespace pokedex
 {
@@ -20,11 +18,6 @@ namespace pokedex
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation, ScreenOrientation = ScreenOrientation.Landscape)]
     public class MainActivity : Activity
     {
-        // Create a list that will hold the data on all pokemon
-        // We also need a way to detect whether a pokemon is currently loaded, -1 represent no active pokemon
-        private readonly List<Pokemon> pokemonData = new List<Pokemon>();
-        private int activePokemonIndex = -1;
-
         // The app needs an object that detects gestures
         private GestureDetectorCompat gestureDetector;
 
@@ -49,7 +42,7 @@ namespace pokedex
             SetContentView(Resource.Layout.activity_main);
 
             // Enable Gesture Detection
-            gestureDetector = new GestureDetectorCompat(this, new MyGestureListener { mainActivity = this });
+            gestureDetector = new GestureDetectorCompat(this, new SwipeService { mainActivity = this });
 
             // Initialize the TTS engine to reduce waiting times
             TextToSpeech.SpeakAsync("");
@@ -67,14 +60,11 @@ namespace pokedex
         /// after which all data will be loaded into their individual views.
         /// This function also activates the TTS of the pokemon.
         /// </summary>
-        /// <param name="pokedexNumber">The pokedex number of the pokemon that's supposed to be loaded in</param>
-        private void LoadPokemonData(int pokedexNumber)
+        /// <param name="pokemon">The Pokemon object to load, randomized if null</param>
+        internal void LoadPokemonData(Pokemon pokemon)
         {
-            // Set the active pokemon
-            activePokemonIndex = pokedexNumber - 1;
-
-            // Get the pokemon
-            Pokemon pokemon = pokemonData[activePokemonIndex];
+            // If the pokemon object is null, get a random one
+            pokemon ??= PokedexService.GetRandomPokemon();
 
             // Load the interface elements
             pokemonNumber.Text = pokemon.Number;
@@ -85,13 +75,21 @@ namespace pokedex
         }
 
         /// <summary>
-        /// This function uses the Pokedex Service to get a random pokemon from the API.
-        /// This random pokemon will be loaded as the active pokemon.
+        /// Adds the List Activity to the activity stack.
         /// </summary>
-        public void GetRandomPokemon()
+        /// <param name="filteredNumbers">If this array contains pokedex numbers, those are the only ones to show</param>
+        public void NavigateToPokemonList(string[] filteredNumbers)
         {
-            // Get a random pokemon and load it into the app
-            LoadPokemonData(PokedexService.GetRandomPokemon());
+            // Create a bundle to hold the filtered numbers
+            Bundle bundle = new Bundle();
+            bundle.PutStringArray("filteredNumbers", filteredNumbers);
+
+            // Create an intent and add the bundle
+            Intent listActivity = new Intent(this, typeof(ListActivity));
+            listActivity.PutExtras(bundle);
+
+            // Start the activity
+            StartActivity(listActivity);
         }
 
         /// <summary>
@@ -112,71 +110,6 @@ namespace pokedex
             // Set all the required permission
             Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-        }
-        
-        /// <summary>
-        /// We need a MyGestureClass because of the way Android handles touch events.
-        /// If we didn't use this, we would need to implement every single possible swipe action.
-        /// </summary>
-        internal class MyGestureListener : SimpleOnGestureListener
-        {
-            // Create a constant that holds the main activity
-            public MainActivity mainActivity;
-
-            // Create a constant that is used to calculate whether a swipe has been made
-            private readonly int MinimumVelocity = 200;
-
-            /// <summary>
-            /// This function checks whether the user has swiped across the screen, then determines the direction of said swipe.
-            /// </summary>
-            /// <param name="differenceX">The distance between the start and endpoint of the swipe on the X-axis</param>
-            /// <param name="differenceY">The distance between the start and endpoint of the swipe on the Y-axis</param>
-            /// <param name="velocityX">The speed of the swipe across the X-axis</param>
-            /// <param name="velocityY">The speed of the swipe across the Y-axis</param>
-            /// <returns>A string with the direction if a swipe has been detected, an empty string otherwise</returns>
-            private string GetSwipeDirection(float differenceX, float differenceY, float velocityX, float velocityY)
-            {
-                // Check whether the motion counts as a horizontal swipe
-                if (Math.Abs(differenceX) > Math.Abs(differenceY) && Math.Abs(differenceX) > MinimumVelocity && Math.Abs(velocityX) > MinimumVelocity)
-                {
-                    // Return the direction of the swipe
-                    return differenceX > 0 ? "Right" : "Left";
-                }
-                
-                // Check whether the motion counts as a vertical swipe
-                if (Math.Abs(differenceY) > MinimumVelocity && Math.Abs(velocityY) > MinimumVelocity)
-                {
-                    // Return the direction of the swipe
-                    return differenceY > 0 ? "Down" : "Up";
-                }
-
-                // No valid swipe was detected, return an empty string
-                return "";
-            }
-
-            /// <summary>
-            /// The function that get's called automatically when the user flings their finger across the screen.
-            /// </summary>
-            /// <param name="e1">The startingpoint of the swipe</param>
-            /// <param name="e2">The endpoint of the swipe</param>
-            /// <param name="velocityX">The speed of the swipe across the X-axis</param>
-            /// <param name="velocityY">The speed of the swipe across the Y-axis</param>
-            /// <returns>True if the event was handled, false it wasn't</returns>
-            public override bool OnFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
-            {
-                // Get the direction of the swipe, this becomes an empty string if the movement is not a valid swipe
-                string direction = GetSwipeDirection(e2.GetX() - e1.GetX(), e2.GetY() - e1.GetY(), velocityX, velocityY);
-
-                // Determine the action based on the direction
-                switch (direction)
-                {
-                    case "Right":   Console.WriteLine(direction);       return true;    // Show camera
-                    case "Left":    Console.WriteLine(direction);       return true;    // Show pokemon list
-                    case "Up":      Console.WriteLine(direction);       return true;    // Show pokemon details
-                    case "Down":    mainActivity.GetRandomPokemon();    return true;    // Get random pokemon
-                    default:                                            return false;
-                }
-            }
         }
     }
 }

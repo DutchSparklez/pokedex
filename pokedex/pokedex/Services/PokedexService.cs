@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Android.Content.PM;
 using pokedex.Models;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +12,9 @@ namespace pokedex.Services
     /// </summary>
     internal static class PokedexService
     {
+        // Create a variable that holds the Pokemon Data List
+        static List<Pokemon> pokemonData;
+
         // Create a constant that contains the base API address
         static readonly string ApiAddress = "http://penguin-plaza.nl/pokedex/";
 
@@ -22,7 +24,7 @@ namespace pokedex.Services
         /// </summary>
         /// <param name="dataStream">The JSON file included with the application</param>
         /// <returns></returns>
-        public static List<Pokemon> LoadPokemonData(Stream dataStream)
+        public static void LoadPokemonData(Stream dataStream)
         {
             // Start reading the file
             using StreamReader reader = new StreamReader(dataStream);
@@ -31,21 +33,28 @@ namespace pokedex.Services
             string json = reader.ReadToEnd();
 
             // Convert the data to a list of Pokémon objects
-            return JsonConvert.DeserializeObject<List<Pokemon>>(json);
+            pokemonData = JsonConvert.DeserializeObject<List<Pokemon>>(json);
         }
+
+        /// <summary>
+        /// Return a single pokémon object.
+        /// </summary>
+        /// <param name="pokedexNumber">The Pokédex number of the Pokémon to be returned</param>
+        /// <returns></returns>
+        public static Pokemon GetPokemon(int pokedexNumber) => pokemonData[pokedexNumber - 1];
 
         /// <summary>
         /// Call the base API address to get a random pokemon number.
         /// </summary>
         /// <returns>An integer represeting the pokedex number of a random pokemone</returns>
-        public static int GetRandomPokemon()
+        public static Pokemon GetRandomPokemon()
         {
             // Perform a webrequest to the base of the API
             WebRequest request          = WebRequest.Create(ApiAddress);
             using StreamReader reader   = new StreamReader(request.GetResponse().GetResponseStream());
 
             // Parse the answer as an integer
-            return int.Parse(reader.ReadToEnd());
+            return GetPokemon(int.Parse(reader.ReadToEnd()));
         }
     }
 }
