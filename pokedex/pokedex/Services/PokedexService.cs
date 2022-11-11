@@ -1,7 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Java.Lang;
+using Newtonsoft.Json;
 using pokedex.Models;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 
 namespace pokedex.Services
@@ -55,6 +57,16 @@ namespace pokedex.Services
 
             // Parse the answer as an integer
             return GetPokemon(int.Parse(reader.ReadToEnd()));
+        }
+
+        /// <summary>
+        /// Get a list of all available Pokémon.
+        /// </summary>
+        /// <returns>An enumarable containing tuples with the number and name of all Pokémon</returns>
+        public static IEnumerable<(string number, string name)> GetPokemonList()
+        {
+            // Get the number and the name of every pokemon
+            return pokemonData.Select(pokemon => (pokemon.Number, pokemon.Name));
         }
     }
 }

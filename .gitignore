@@ -5,3 +5,4 @@ bin/
 obj/
 *.txt
 *.csproj.user
+*.zip

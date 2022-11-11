@@ -1,4 +1,5 @@
 ﻿using Android.App;
+using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using Android.Runtime;
@@ -8,7 +9,6 @@ using AndroidX.Core.View;
 using pokedex.Models;
 using pokedex.Services;
 using Xamarin.Essentials;
-using Android.Content;
 
 namespace pokedex
 {
@@ -44,9 +44,6 @@ namespace pokedex
             // Enable Gesture Detection
             gestureDetector = new GestureDetectorCompat(this, new SwipeService { mainActivity = this });
 
-            // Initialize the TTS engine to reduce waiting times
-            TextToSpeech.SpeakAsync("");
-
             // Get the interface components
             pokemonNumber = FindViewById<TextView>(Resource.Id.pokemonNumber);
             pokemonImage = FindViewById<ImageView>(Resource.Id.pokemonImage);
@@ -77,19 +74,17 @@ namespace pokedex
         /// <summary>
         /// Adds the List Activity to the activity stack.
         /// </summary>
-        /// <param name="filteredNumbers">If this array contains pokedex numbers, those are the only ones to show</param>
-        public void NavigateToPokemonList(string[] filteredNumbers)
+        public void NavigateToPokemonList()
         {
             // Create a bundle to hold the filtered numbers
             Bundle bundle = new Bundle();
-            bundle.PutStringArray("filteredNumbers", filteredNumbers);
 
             // Create an intent and add the bundle
             Intent listActivity = new Intent(this, typeof(ListActivity));
             listActivity.PutExtras(bundle);
 
             // Start the activity
-            StartActivity(listActivity);
+            StartActivityForResult(listActivity, 0);
         }
 
         /// <summary>
@@ -102,6 +97,22 @@ namespace pokedex
             // Direct the touch event to MyGestureListeren
             gestureDetector.OnTouchEvent(e);
             return base.OnTouchEvent(e);
+        }
+
+        /// <summary>
+        /// Function to process the results of other activities
+        /// </summary>
+        /// <param name="requestCode">Represents what request has finished</param>
+        /// <param name="resultCode">The result of the code</param>
+        /// <param name="data">Additional data provided by the activity</param>
+        protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
+        {
+            // Check which activity ended succesfully
+            if (requestCode == 0 && resultCode == Result.Ok)
+            {
+                // Load the pokemon data from the selected list item
+                LoadPokemonData(PokedexService.GetPokemon(int.Parse(data.GetStringExtra("number"))));
+            }
         }
 
         // Build in function to manage android permission
