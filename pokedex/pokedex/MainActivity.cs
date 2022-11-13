@@ -1,13 +1,19 @@
 ﻿using Android.App;
 using Android.Content;
 using Android.Content.PM;
+using Android.Graphics;
+using Android.Media;
 using Android.OS;
+using Android.Provider;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using AndroidX.Core.View;
+using Java.IO;
 using pokedex.Models;
 using pokedex.Services;
+using System;
+using System.Collections.Generic;
 using Xamarin.Essentials;
 
 namespace pokedex
@@ -24,6 +30,11 @@ namespace pokedex
         // Create variables that store android views
         private TextView pokemonNumber;
         private ImageView pokemonImage;
+
+        // Create variables for the camera
+        private static File File;
+        private static File Directory;
+        private static Bitmap Bitmap;
 
         /// <summary>
         /// This function creates the main activity and places it on the screen.
@@ -71,6 +82,31 @@ namespace pokedex
             pokemon.SayDetails();
         }
 
+        private bool CanTakePictures()
+        {
+            Intent intent = new Intent(MediaStore.ActionImageCapture);
+            IList<ResolveInfo> availableActivities = PackageManager.QueryIntentActivities(intent, PackageInfoFlags.MatchDefaultOnly);
+            return availableActivities != null && availableActivities.Count > 0;
+        }
+
+        [Obsolete]
+        private void CreateDirectory()
+        {
+            Directory = new File(Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryPictures), "Pokedex");
+            if (!Directory.Exists())
+            {
+                Directory.Mkdirs();
+            }
+        }
+
+        public void TakePicture()
+        {
+            File = new File(Directory, string.Format("check_{0}.jpg", Guid.NewGuid()));
+            Intent imageCapture = new Intent(MediaStore.ActionImageCapture);
+            imageCapture.PutExtra(MediaStore.ExtraOutput, Android.Net.Uri.FromFile(File));
+            StartActivityForResult(imageCapture, 1);
+        }
+
         /// <summary>
         /// Adds the List Activity to the activity stack.
         /// </summary>
@@ -105,13 +141,26 @@ namespace pokedex
         /// <param name="requestCode">Represents what request has finished</param>
         /// <param name="resultCode">The result of the code</param>
         /// <param name="data">Additional data provided by the activity</param>
-        protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
+        protected async override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
             // Check which activity ended succesfully
             if (requestCode == 0 && resultCode == Result.Ok)
             {
                 // Load the pokemon data from the selected list item
                 LoadPokemonData(PokedexService.GetPokemon(int.Parse(data.GetStringExtra("number"))));
+            }
+
+            if (requestCode == 1 && resultCode == Result.Ok)
+            {
+                // Make the image available in the gallery
+                Android.Net.Uri contentUri = Android.Net.Uri.FromFile(File);
+                MediaScannerConnection.ScanFile(this, new string[] { File.ToString() }, null, null);
+
+                // Get the prediction
+                await VisionService.GetPrediction(contentUri.Path);
+
+                // Dispose of the Java side bitmap.
+                GC.Collect();
             }
         }
 

@@ -61,7 +61,7 @@ namespace pokedex.Services
             switch (direction)
             {
                 case "Right":   Console.WriteLine(direction);               return true;    // Show camera
-                case "Left":    mainActivity.NavigateToPokemonList(null);   return true;    // Show pokemon list
+                case "Left":    mainActivity.NavigateToPokemonList();       return true;    // Show pokemon list
                 case "Up":      Console.WriteLine(direction);               return true;    // Show pokemon details
                 case "Down":    mainActivity.LoadPokemonData(null);         return true;    // Get random pokemon
                 default:                                                    return false;

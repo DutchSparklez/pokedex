@@ -40,14 +40,14 @@ namespace pokedex.Services
         /// <summary>
         /// Perform a prediction and get the pokemon number to match
         /// </summary>
-        /// <param name="image">?</param>
+        /// <param name="imagePath">?</param>
         /// <returns>The number of the pokemon with the closest match, null on error / no result</returns>
-        public static async Task<string> GetPrediction(string image)
+        public static async Task<string> GetPrediction(string imagePath)
         {
             try
             {
                 // Create the content for the HTTP Request (POST)
-                HttpContent imageContent = new StreamContent(new FileStream(image, FileMode.Open));
+                HttpContent imageContent = new StreamContent(new FileStream(imagePath, FileMode.Open));
                 imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
                 imageContent.Headers.Add("Prediction-Key", predictionKey);
                 MultipartFormDataContent formDataContent = new MultipartFormDataContent { imageContent };
