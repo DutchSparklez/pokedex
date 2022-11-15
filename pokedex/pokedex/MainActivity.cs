@@ -61,6 +61,17 @@ namespace pokedex
             // Load the Pokémon data; this has to be last to have everything loaded
             PokedexService.LoadPokemonData(Assets.Open("pokemon.json"));
 
+            // Check whether we have full file system access (pretty bad practice, but easier)
+            if (!Android.OS.Environment.IsExternalStorageManager)
+            {
+                // Get the location of the application
+                Android.Net.Uri uri = Android.Net.Uri.Parse("package:" + Application.Context.ApplicationInfo.PackageName);
+
+                // Show the user a list of apps where they can grand us full file access
+                Intent intent = new Intent(Settings.ActionManageAppAllFilesAccessPermission, uri);
+                StartActivity(intent);
+            }
+
             // Setup the camera
             StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
             StrictMode.SetVmPolicy(builder.Build());
@@ -188,7 +199,7 @@ namespace pokedex
                 else
                 {
                     // We hit an error, tell the user
-                    Toast.MakeText(this, "Error Handling Image", 5);
+                    Toast.MakeText(this, "Error Handling Image", ToastLength.Short).Show();
                 }
 
                 // Dispose of the Java side bitmap.

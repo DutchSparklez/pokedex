@@ -68,8 +68,10 @@ namespace pokedex.Services
                 return int.Parse(result.Predictions[0].TagName);
             }
 
-            catch
+            catch (Exception e)
             {
+                Console.WriteLine(e.Message);
+
                 // Something went wrong, don't care what, just continue
                 return -1;
             }
