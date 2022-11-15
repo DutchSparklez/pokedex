@@ -42,29 +42,36 @@ namespace pokedex.Services
         /// </summary>
         /// <param name="imagePath">?</param>
         /// <returns>The number of the pokemon with the closest match, null on error / no result</returns>
-        public static async Task<string> GetPrediction(string imagePath)
+        public static async Task<int> GetPrediction(string imagePath)
         {
+            // The try/catch allows us to handle errors thrown, we kinda just ignore them
             try
             {
-                // Create the content for the HTTP Request (POST)
+                // Create the content for the HTTP Request
                 HttpContent imageContent = new StreamContent(new FileStream(imagePath, FileMode.Open));
-                imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
-                imageContent.Headers.Add("Prediction-Key", predictionKey);
-                MultipartFormDataContent formDataContent = new MultipartFormDataContent { imageContent };
 
-                // Perform the request
-                HttpResponseMessage response = await webClient.PostAsync(requestUri, formDataContent);
+                // Add the correct header
+                webClient.DefaultRequestHeaders.Add("Prediction-Key", predictionKey);
+                imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+
+                // Prepare for a request that contains a stream of data
+                using var formData = new MultipartFormDataContent { imageContent };
+
+                // Perform the request as POST
+                HttpResponseMessage response = await webClient.PostAsync(requestUri, formData);
+
+                // Unpack the result and translate it to the Prediction Class
                 string content = await response.Content.ReadAsStringAsync();
                 PredictionResult result = JsonConvert.DeserializeObject<PredictionResult>(content);
 
                 // Return the tag of the closest match
-                return result.Predictions[0].TagName;
+                return int.Parse(result.Predictions[0].TagName);
             }
 
             catch
             {
                 // Something went wrong, don't care what, just continue
-                return null;
+                return -1;
             }
         }
     }

@@ -1,5 +1,4 @@
-﻿using Java.Lang;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using pokedex.Models;
 using System.Collections.Generic;
 using System.IO;

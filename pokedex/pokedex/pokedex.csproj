@@ -72,7 +72,6 @@
     <Compile Include="Models\Pokemon.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Services\CameraService.cs" />
     <Compile Include="Services\PokedexService.cs" />
     <Compile Include="Services\SwipeService.cs" />
     <Compile Include="Services\VisionService.cs" />

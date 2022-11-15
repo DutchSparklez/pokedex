@@ -34,7 +34,6 @@ namespace pokedex
         // Create variables for the camera
         private static File File;
         private static File Directory;
-        private static Bitmap Bitmap;
 
         /// <summary>
         /// This function creates the main activity and places it on the screen.
@@ -61,6 +60,11 @@ namespace pokedex
 
             // Load the Pokémon data; this has to be last to have everything loaded
             PokedexService.LoadPokemonData(Assets.Open("pokemon.json"));
+
+            // Setup the camera
+            StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+            StrictMode.SetVmPolicy(builder.Build());
+            SetupPictureDirectory();
         }
 
         /// <summary>
@@ -82,28 +86,43 @@ namespace pokedex
             pokemon.SayDetails();
         }
 
-        private bool CanTakePictures()
+        /// <summary>
+        /// Function to setup the picture directory.
+        /// </summary>
+        private void SetupPictureDirectory()
         {
+            // Get information from the camera app
             Intent intent = new Intent(MediaStore.ActionImageCapture);
             IList<ResolveInfo> availableActivities = PackageManager.QueryIntentActivities(intent, PackageInfoFlags.MatchDefaultOnly);
-            return availableActivities != null && availableActivities.Count > 0;
-        }
 
-        [Obsolete]
-        private void CreateDirectory()
-        {
-            Directory = new File(Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryPictures), "Pokedex");
-            if (!Directory.Exists())
-            {
-                Directory.Mkdirs();
+            // Check if a camera app is available
+            if (availableActivities != null) { 
+                // Get the path to the image directory
+                // Technically this function is deprecated but I didn't bother to change it
+                Directory = new File(Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryPictures), "Pokedex");
+
+                // Check if the directory exist
+                if (!Directory.Exists())
+                {
+                    // It doesn't, make it
+                    Directory.Mkdirs();
+                }
             }
         }
 
+        /// <summary>
+        /// Function that summons the camera app and allows the user to take a picture
+        /// </summary>
         public void TakePicture()
         {
+            // Prepare a file for the picture
             File = new File(Directory, string.Format("check_{0}.jpg", Guid.NewGuid()));
+
+            // Prepare the camera app
             Intent imageCapture = new Intent(MediaStore.ActionImageCapture);
             imageCapture.PutExtra(MediaStore.ExtraOutput, Android.Net.Uri.FromFile(File));
+
+            // Start the camera app
             StartActivityForResult(imageCapture, 1);
         }
 
@@ -144,20 +163,33 @@ namespace pokedex
         protected async override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
             // Check which activity ended succesfully
+            // Request 0 is Pokémon List
             if (requestCode == 0 && resultCode == Result.Ok)
             {
                 // Load the pokemon data from the selected list item
                 LoadPokemonData(PokedexService.GetPokemon(int.Parse(data.GetStringExtra("number"))));
             }
 
-            if (requestCode == 1 && resultCode == Result.Ok)
+            // Request 1 is camera
+            if (requestCode == 1)
             {
                 // Make the image available in the gallery
                 Android.Net.Uri contentUri = Android.Net.Uri.FromFile(File);
-                MediaScannerConnection.ScanFile(this, new string[] { File.ToString() }, null, null);
 
                 // Get the prediction
-                await VisionService.GetPrediction(contentUri.Path);
+                int prediction = await VisionService.GetPrediction(contentUri.Path);
+
+                // Check whether the prediction was successfull
+                if (prediction > 0)
+                {
+                    // We got one! Get the data!
+                    LoadPokemonData(PokedexService.GetPokemon(prediction));
+                }
+                else
+                {
+                    // We hit an error, tell the user
+                    Toast.MakeText(this, "Error Handling Image", 5);
+                }
 
                 // Dispose of the Java side bitmap.
                 GC.Collect();
