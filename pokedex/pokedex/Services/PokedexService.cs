@@ -1,9 +1,9 @@
 ﻿using Newtonsoft.Json;
 using pokedex.Models;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 
 namespace pokedex.Services
 {
@@ -15,9 +15,6 @@ namespace pokedex.Services
     {
         // Create a variable that holds the Pokemon Data List
         static List<Pokemon> pokemonData;
-
-        // Create a constant that contains the base API address
-        static readonly string ApiAddress = "http://penguin-plaza.nl/pokedex/";
 
         /// <summary>
         /// This function reads all the Pokémon data from the included JSON file.
@@ -45,18 +42,10 @@ namespace pokedex.Services
         public static Pokemon GetPokemon(int pokedexNumber) => pokemonData[pokedexNumber - 1];
 
         /// <summary>
-        /// Call the base API address to get a random pokemon number.
+        /// Get a random Pokémon
         /// </summary>
         /// <returns>An integer represeting the pokedex number of a random pokemone</returns>
-        public static Pokemon GetRandomPokemon()
-        {
-            // Perform a webrequest to the base of the API
-            WebRequest request          = WebRequest.Create(ApiAddress);
-            using StreamReader reader   = new StreamReader(request.GetResponse().GetResponseStream());
-
-            // Parse the answer as an integer
-            return GetPokemon(int.Parse(reader.ReadToEnd()));
-        }
+        public static Pokemon GetRandomPokemon() => GetPokemon(new Random().Next(1, 152));
 
         /// <summary>
         /// Get a list of all available Pokémon.
