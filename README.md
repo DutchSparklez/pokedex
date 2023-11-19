@@ -1,6 +1,6 @@
 # Pokédex
 
-*By DutchSparklez, made for the "We are in IT together"-conference.*
+*By Jimmaphy, made for the "We are in IT together"-conference.*
 
 This Pokédex is the subject of my presentation during the conference. The goal of the presentation is to inspire my peers by introducing them to a 'complete' software development project. During the presentation, I go into details on how a project like this is set up and made. This file is an addition to the presentation, containing an overview of the project and a short manual on how to use the code. I hope you're as exited as I am! The code is also completely documented within the project using comments and relevant docstrings.
 
